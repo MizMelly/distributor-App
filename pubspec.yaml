@@ -1,0 +1,70 @@
+name: distrohub_mobile
+description: "A professional distributor management mobile app built with Flutter."
+
+publish_to: 'none' # Remove this line when ready to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'  # Updated for 2026 stability (Dart 3.5+)
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Core utilities & UI
+  cupertino_icons: ^1.0.8
+  google_fonts: ^8.0.0
+  intl: ^0.20.2               # Currency (₦), dates, localization
+
+
+  # Networking & storage
+  http: ^1.2.0
+  shared_preferences: ^2.3.0  # Latest minor bump
+  image_picker: ^1.1.0        # Image/file picker from device
+
+  # State management (recommended 2026 choice)
+  flutter_riverpod: ^3.2.1    # Or ^3.x latest – clean, testable, no context boilerplate
+
+  # Navigation (modern replacement for Navigator)
+  go_router: ^17.1.0          # Latest stable – deep linking, guards, named routes
+
+  # Images & caching
+  cached_network_image: ^3.4.0 # Smooth product images with placeholder/error
+
+  # Loading indicators
+  flutter_spinkit: ^5.2.1     # Nice spinners for loading states
+
+  # Carousel for adverts banner (as requested)
+  carousel_slider: ^5.1.1     # Latest stable version
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0       # Updated lints package
+
+flutter:
+  uses-material-design: true
+
+  # Add your assets here (uncomment when ready)
+  assets:
+    - assets/images/          #
+    - assets/icons/           
+    # Example advert banners:
+    # - assets/banners/promo1.png
+    # - assets/banners/promo2.png
+
+  # Custom fonts (optional – good alternative to google_fonts for offline)
+  # fonts:
+  #   - family: Poppins
+  #     fonts:
+  #       - asset: fonts/Poppins-Regular.ttf
+  #       - asset: fonts/Poppins-Medium.ttf
+  #         weight: 500
+  #       - asset: fonts/Poppins-Bold.ttf
+  #         weight: 700
+
+# Optional: Add this at the end for better linting
+flutter_lints:
+  include: package:flutter_lints/flutter.yaml
