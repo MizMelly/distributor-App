@@ -58,7 +58,7 @@ coverage/
 # Symbolication / Obfuscation
 # ==============================
 app.*.symbols
-app.*.map
+app.*.map.json
 
 # ==============================
 # Android
