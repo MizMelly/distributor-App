@@ -1,4 +1,5 @@
 {
+  "version": 2,
   "builds": [
     {
       "src": "pubspec.yaml",
@@ -11,7 +12,6 @@
     }
   ],
   "routes": [
-    { "handle": "filesystem" },
-    { "src": "/.*", "dest": "/index.html" }
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
