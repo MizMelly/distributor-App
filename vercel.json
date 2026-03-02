@@ -1,15 +1,7 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "pubspec.yaml",
-      "use": "@vercel/static-build",
-      "config": {
-        "installCommand": "git clone https://github.com/flutter/flutter.git -b stable --depth 1 flutter_sdk && export PATH=\"$PWD/flutter_sdk/bin:$PATH\" && flutter --version && flutter pub get",
-        "buildCommand": "flutter build web --release --web-renderer canvaskit",
-        "outputDirectory": "build/web"
-      }
-    }
+    { "src": "build/web/**", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/(.*)", "dest": "/index.html" }
