@@ -43,3 +43,34 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+coverage/
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+
+# Android
+android/.gradle/
+android/local.properties
+android/gradlew
+android/gradlew.bat
+
+# iOS
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/Generated.xcconfig
+ios/Runner/GeneratedPluginRegistrant.*
+
+# Web
+web/build/
+web/flutter_service_worker.js
+
+# Misc
+.env
+.DS_Store
+*.log
