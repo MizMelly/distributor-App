@@ -49,7 +49,15 @@ app.*.map.json
 .flutter-plugins
 .flutter-plugins-dependencies
 .packages
-build/
+# Ignore everything inside build
+build/*
+
+# But NOT build/web
+!build/web
+
+# And make sure files inside build/web are NOT ignored
+!build/web/**
+
 coverage/
 *.g.dart
 *.freezed.dart
