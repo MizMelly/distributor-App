@@ -1,4 +1,6 @@
+# ==============================
 # Miscellaneous
+# ==============================
 *.class
 *.log
 *.pyc
@@ -11,74 +13,73 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+.env
 
-# IntelliJ related
+# ==============================
+# IntelliJ / Android Studio
+# ==============================
 *.iml
 *.ipr
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# ==============================
+# VS Code (uncomment if desired)
+# ==============================
+# .vscode/
 
-# Flutter/Dart/Pub related
+# ==============================
+# Flutter / Dart / Pub
+# ==============================
 **/doc/api/
 **/ios/Flutter/.last_build_id
-.dart_tool/
-.flutter-plugins-dependencies
-.pub-cache/
-.pub/
-/build/
-/coverage/
-
-# Symbolication related
-app.*.symbols
-
-# Obfuscation related
-app.*.map.json
-
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
-
-# Flutter / Dart
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
 .packages
-# Ignore everything inside build
-build/*
-
-# But NOT build/web
-!build/web
-
-# And make sure files inside build/web are NOT ignored
-!build/web/**
-
+.pub-cache/
+.pub/
 coverage/
 *.g.dart
 *.freezed.dart
 *.mocks.dart
 
+# ==============================
+# Build Directory
+# Ignore everything inside build
+# BUT keep build/web
+# ==============================
+/build/*
+!/build/
+!/build/web/
+!/build/web/**
+
+# ==============================
+# Symbolication / Obfuscation
+# ==============================
+app.*.symbols
+app.*.map.json
+
+# ==============================
 # Android
+# ==============================
 android/.gradle/
 android/local.properties
 android/gradlew
 android/gradlew.bat
+/android/app/debug
+/android/app/profile
+/android/app/release
 
+# ==============================
 # iOS
+# ==============================
 ios/Flutter/flutter_export_environment.sh
 ios/Flutter/Generated.xcconfig
 ios/Runner/GeneratedPluginRegistrant.*
 
+# ==============================
 # Web
+# ==============================
 web/build/
 web/flutter_service_worker.js
-
-# Misc
-.env
-.DS_Store
-*.log
