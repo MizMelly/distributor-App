@@ -10,9 +10,9 @@ class Api {
   // ======================
   static String get baseUrl {
     if (Platform.isAndroid) {
-      return 'http://10.0.2.2:5000/api'; // Android emulator
+      return 'https://distrohub-app-backend-joy-kurokos-projects.vercel.app/'; // Android emulator
     } else {
-      return 'http://localhost:5000/api'; // iOS, desktop, web
+      return 'https://distrohub-app-backend-joy-kurokos-projects.vercel.app/'; // iOS, desktop, web
     }
   }
 
