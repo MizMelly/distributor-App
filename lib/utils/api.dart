@@ -1,20 +1,12 @@
 import 'dart:convert';
-import 'dart:io' show Platform;
-
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Api {
   // ======================
-  // BASE URL
+  // BASE URL (Vercel backend)
   // ======================
-  static String get baseUrl {
-    if (Platform.isAndroid) {
-      return 'https://distrohub-app-backend-joy-kurokos-projects.vercel.app/'; // Android emulator
-    } else {
-      return 'https://distrohub-app-backend-joy-kurokos-projects.vercel.app/'; // iOS, desktop, web
-    }
-  }
+  static const String baseUrl = 'https://distrohub-app-backend-joy-kurokos-projects.vercel.app';
 
   // ======================
   // AUTH
@@ -23,49 +15,38 @@ class Api {
     required String email,
     required String password,
   }) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-      }),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/auth/login'), // ← add /api/ prefix if your routes are mounted under /api
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'password': password,
+        }),
+      );
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // Save token and user data
+        await saveSession(data['token'], data['user'] ?? {});
+        return data;
+      } else {
+        print('Login failed: ${response.statusCode} - ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('Login error: $e');
+      return null;
     }
-    return null;
   }
 
   static Future<Map<String, dynamic>?> getProfile() async {
     final token = await getToken();
     if (token == null) return null;
 
-    final response = await http.get(
-      Uri.parse('$baseUrl/auth/profile'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      // Backend returns { success, message, data: {...} }
-      // Extract the data object which contains user info
-      return body['data'] ?? body;
-    }
-    return null;
-  }
-
-  static Future<List<Map<String, dynamic>>> getBankAccounts() async {
-    final token = await getToken();
-    if (token == null) return [];
-
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/bank-accounts'),
+        Uri.parse('$baseUrl/api/auth/profile'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -74,75 +55,135 @@ class Api {
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        final data = body['data'] ?? body['bank_accounts'] ?? [];
-        if (data is List) {
-          return List<Map<String, dynamic>>.from(data);
-        }
+        return body['data'] ?? body;
+      } else {
+        print('Profile fetch failed: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Profile error: $e');
+      return null;
+    }
+  }
+
+  // ======================
+  // BANK ACCOUNTS
+  // ======================
+  static Future<List<Map<String, dynamic>>> getBankAccounts() async {
+    final token = await getToken();
+    if (token == null) return [];
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/bank-accounts'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return List<Map<String, dynamic>>.from(body['data'] ?? body['bank_accounts'] ?? []);
       }
       return [];
     } catch (e) {
-      print('Error fetching bank accounts: $e');
+      print('Bank accounts error: $e');
       return [];
     }
   }
 
   // ======================
-  // PRODUCT SECTION
+  // PRODUCTS (Paged)
   // ======================
   static Future<Map<String, dynamic>> fetchProductsPaged({
     String search = '',
     int page = 1,
-    int perPage = 8,  // default to 8 items per page
+    int perPage = 8,
   }) async {
     final token = await getToken();
     if (token == null) {
-      return {
-        'products': [],
-        'totalPages': 1,
-      };
+      return {'products': [], 'totalPages': 1};
     }
 
-    final uri = Uri.parse('$baseUrl/products').replace(
+    final uri = Uri.parse('$baseUrl/api/products').replace(
       queryParameters: {
         'search': search.isNotEmpty ? search : null,
         'page': page.toString(),
-        'per_page': perPage.toString(),  // most common name
-        // If your backend uses different name, change to:
-        // 'limit': perPage.toString(),
-        // 'size': perPage.toString(),
+        'per_page': perPage.toString(),
       },
     );
 
-    final response = await http.get(
-      uri,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
+    try {
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
 
-    if (response.statusCode == 200) {
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {
+          'products': data['products'] ?? data['data'] ?? [],
+          'totalPages': data['totalPages'] ??
+                        data['last_page'] ??
+                        data['meta']?['last_page'] ??
+                        1,
+        };
+      }
+      return {'products': [], 'totalPages': 1};
+    } catch (e) {
+      print('Products fetch error: $e');
+      return {'products': [], 'totalPages': 1};
+    }
+  }
+
+  // ======================
+  // ORDERS
+  // ======================
+  static Future<Map<String, dynamic>> createOrder(Map<String, dynamic> orderData) async {
+    final token = await getToken();
+    if (token == null) {
+      return {'success': false, 'message': 'Not authenticated'};
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/orders'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(orderData),
+      );
+
       final data = jsonDecode(response.body);
-      return {
-        'products': data['products'] ?? data['data'] ?? data['items'] ?? [],
-        'totalPages': data['totalPages'] ??
-                      data['last_page'] ??
-                      data['pages'] ??
-                      data['meta']?['last_page'] ??
-                      1,
-      };
-    } else {
-      throw Exception('Failed to load products: ${response.statusCode} - ${response.body}');
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Order created',
+          'orderId': data['orderId'] ?? data['id'],
+          'data': data,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to create order',
+        };
+      }
+    } catch (e) {
+      print('Order creation error: $e');
+      return {'success': false, 'message': e.toString()};
     }
   }
 
   // ======================
   // SESSION MANAGEMENT
   // ======================
-  static Future<void> saveSession(
-    String token,
-    Map<String, dynamic> user,
-  ) async {
+  static Future<void> saveSession(String token, Map<String, dynamic> user) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('token', token);
     await prefs.setString('user', jsonEncode(user));
@@ -157,125 +198,4 @@ class Api {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
   }
-
-  // ======================
-  // ORDERS
-  // ======================
-  static Future<Map<String, dynamic>> createOrder(Map<String, dynamic> orderData) async {
-    final token = await getToken();
-    if (token == null) {
-      return {
-        'success': false,
-        'message': 'User not authenticated',
-      };
-    }
-
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/orders'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(orderData),
-      );
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return {
-          'success': data['success'] ?? true,
-          'message': data['message'] ?? 'Order created successfully',
-          'orderId': data['orderId'] ?? data['id'],
-          'data': data,
-        };
-      } else {
-        final data = jsonDecode(response.body);
-        return {
-          'success': false,
-          'message': data['message'] ?? 'Failed to create order',
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: ${e.toString()}',
-      };
-    }
-  }
-
-  // Get user's order history
-  static Future<List<Map<String, dynamic>>> getOrderHistory() async {
-    final token = await getToken();
-    if (token == null) return [];
-
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/orders-history'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final body = jsonDecode(response.body);
-        final data = body['data'] ?? [];
-        if (data is List) {
-          return List<Map<String, dynamic>>.from(data);
-        }
-      }
-      return [];
-    } catch (e) {
-      print('Error fetching order history: $e');
-      return [];
-    }
-  }
-
-  // Get order details with items
-  static Future<Map<String, dynamic>?> getOrderDetails(String orderNo) async {
-    final token = await getToken();
-    if (token == null) return null;
-
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/orders-history/$orderNo'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final body = jsonDecode(response.body);
-        return body['data'] ?? body;
-      }
-      return null;
-    } catch (e) {
-      print('Error fetching order details: $e');
-      return null;
-    }
-  }
-
-  // Optional: old non-paginated method – keep commented or remove
-  /*
-  static Future<List<dynamic>> fetchProducts() async {
-    final token = await getToken();
-    if (token == null) return [];
-
-    final response = await http.get(
-      Uri.parse('$baseUrl/products'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data['products'] ?? [];
-    }
-
-    return [];
-  }
-  */
 }
