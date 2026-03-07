@@ -34,9 +34,13 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       // Call the API.login function
       final response = await Api.login(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+  email: _emailController.text.trim(),
+  password: _passwordController.text.trim(),
+);
+
+print("LOGIN SCREEN RESPONSE: $response");
+
+if (!mounted) return;
 
       // If mounted is false, stop execution
       if (!mounted) return;
