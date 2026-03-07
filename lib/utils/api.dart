@@ -6,39 +6,60 @@ class Api {
   // ======================
   // BASE URL (Vercel backend)
   // ======================
-  static const String baseUrl = 'https://distrohub-app-backend-joy-kurokos-projects.vercel.app';
+  static const String baseUrl = 'https://distrohub-app-backend.vercel.app'; 
+
 
   // ======================
   // AUTH
   // ======================
-  static Future<Map<String, dynamic>?> login({
-    required String email,
-    required String password,
-  }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/auth/login'), // ← add /api/ prefix if your routes are mounted under /api
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
-      );
+ static Future<Map<String, dynamic>?> login({
+  required String email,
+  required String password,
+}) async {
+  try {
+    final url = Uri.parse('$baseUrl/api/auth/login');
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        // Save token and user data
-        await saveSession(data['token'], data['user'] ?? {});
-        return data;
-      } else {
-        print('Login failed: ${response.statusCode} - ${response.body}');
-        return null;
-      }
-    } catch (e) {
-      print('Login error: $e');
+    print('┌─────────────────────────────── LOGIN REQUEST ───────────────────────────────┐');
+    print('│ URL:          $url');
+    print('│ Method:       POST');
+    print('│ Headers:      ${{'Content-Type': 'application/json'}}');
+    print('│ Body (raw):   ${jsonEncode({'email': email, 'password': '***'})}');
+    print('│ Email used:   $email');
+    print('└──────────────────────────────────────────────────────────────────────────────┘');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'password': password,
+      }),
+    );
+
+    print('┌─────────────────────────────── LOGIN RESPONSE ───────────────────────────────┐');
+    print('│ Status code:  ${response.statusCode}');
+    print('│ Headers:      ${response.headers}');
+    print('│ Body (raw):   ${response.body}');
+    print('└──────────────────────────────────────────────────────────────────────────────┘');
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      print('Login SUCCESS - Parsed data: $data');
+      await saveSession(data['token'], data['user'] ?? {});
+      return data;
+    } else {
+      print('Login FAILED - non-200 status');
       return null;
     }
+  } catch (e, stack) {
+    print('┌─────────────────────────────── LOGIN EXCEPTION ───────────────────────────────┐');
+    print('│ Exception type:   ${e.runtimeType}');
+    print('│ Exception:        $e');
+    print('│ Stack trace:      $stack');
+    print('└──────────────────────────────────────────────────────────────────────────────┘');
+    return null;
   }
+}
 
   static Future<Map<String, dynamic>?> getProfile() async {
     final token = await getToken();
