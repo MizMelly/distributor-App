@@ -50,21 +50,22 @@ coverage/
 
 # ==============================
 # Platform-specific / local config files
-# (these often contain Platform or dart:io checks)
+# (files that often contain Platform / dart:io / web checks)
 # ==============================
+lib/config/*platform*.dart
 lib/config/local_config.dart
-lib/config/platform_config.dart
+lib/utils/*platform*.dart
+lib/services/*platform*.dart
 lib/utils/platform_utils.dart
 lib/services/platform_service.dart
-*platform*.dart
-*Platform*.dart
 lib/main_desktop.dart
 lib/main_web.dart
+*platform*.dart
+*Platform*.dart
 
 # ==============================
 # Build Directory
-# Ignore everything inside build
-# BUT keep build/web
+# Ignore everything inside build except web build (needed for deployment)
 # ==============================
 /build/*
 !/build/
@@ -96,11 +97,12 @@ ios/Flutter/Generated.xcconfig
 ios/Runner/GeneratedPluginRegistrant.*
 
 # ==============================
-# Web
+# Web (ignore generated web artifacts that are not source code)
 # ==============================
 web/build/
 web/flutter_service_worker.js
-web/index.html.bak  # local backups of index.html
+web/index.html.bak
+web/icons/  # if you generate icons locally
 
 # ==============================
 # macOS / Desktop
