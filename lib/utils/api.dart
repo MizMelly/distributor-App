@@ -64,7 +64,7 @@ class Api {
 
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/auth/profile'),
+        Uri.parse('$baseUrl/api/auth/profile'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -86,7 +86,6 @@ class Api {
     }
   }
 
-
   // ======================
   // BANK ACCOUNTS
   // ======================
@@ -96,20 +95,20 @@ class Api {
 
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/bank-accounts'),
+        Uri.parse('$baseUrl/api/bank-accounts'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       );
 
+      print('Bank accounts - Status: ${response.statusCode}');
+      print('Bank accounts - Body: ${response.body}');
+
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-
-        return List<Map<String, dynamic>>.from(
-            body['data'] ?? body['bank_accounts'] ?? []);
+        return List<Map<String, dynamic>>.from(body['data'] ?? body['bank_accounts'] ?? []);
       }
-
       return [];
     } catch (e) {
       print('Bank accounts error: $e');
@@ -117,23 +116,83 @@ class Api {
     }
   }
 
+  // ======================
+  // ORDERS HISTORY
+  // ======================
+  static Future<List<Map<String, dynamic>>> getOrderHistory() async {
+    final token = await getToken();
+    if (token == null) return [];
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/orders-history'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('getOrderHistory - Status: ${response.statusCode}');
+      print('getOrderHistory - Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final data = body['data'] ?? body['orders'] ?? body['history'] ?? [];
+        if (data is List) {
+          return List<Map<String, dynamic>>.from(data);
+        }
+      }
+      return [];
+    } catch (e) {
+      print('getOrderHistory error: $e');
+      return [];
+    }
+  }
 
   // ======================
-  // PRODUCTS (PAGINATION)
+  // ORDER DETAILS
+  // ======================
+  static Future<Map<String, dynamic>?> getOrderDetails(String orderNo) async {
+    final token = await getToken();
+    if (token == null) return null;
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/orders-history/$orderNo'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('getOrderDetails - Status: ${response.statusCode}');
+      print('getOrderDetails - Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data'] ?? body;
+      }
+      return null;
+    } catch (e) {
+      print('getOrderDetails error: $e');
+      return null;
+    }
+  }
+
+  // ======================
+  // PRODUCTS (Paged)
   // ======================
   static Future<Map<String, dynamic>> fetchProductsPaged({
     String search = '',
     int page = 1,
     int perPage = 8,
   }) async {
-
     final token = await getToken();
-
     if (token == null) {
       return {'products': [], 'totalPages': 1};
     }
 
-    final uri = Uri.parse('$baseUrl/products').replace(
+    final uri = Uri.parse('$baseUrl/api/products').replace(
       queryParameters: {
         'search': search.isNotEmpty ? search : null,
         'page': page.toString(),
@@ -152,16 +211,14 @@ class Api {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-
         return {
           'products': data['products'] ?? data['data'] ?? [],
           'totalPages': data['totalPages'] ??
-              data['last_page'] ??
-              data['meta']?['last_page'] ??
-              1,
+                        data['last_page'] ??
+                        data['meta']?['last_page'] ??
+                        1,
         };
       }
-
       return {'products': [], 'totalPages': 1};
     } catch (e) {
       print('Products fetch error: $e');
@@ -169,22 +226,18 @@ class Api {
     }
   }
 
-
   // ======================
   // CREATE ORDER
   // ======================
-  static Future<Map<String, dynamic>> createOrder(
-      Map<String, dynamic> orderData) async {
-
+  static Future<Map<String, dynamic>> createOrder(Map<String, dynamic> orderData) async {
     final token = await getToken();
-
     if (token == null) {
       return {'success': false, 'message': 'Not authenticated'};
     }
 
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/orders'),
+        Uri.parse('$baseUrl/api/orders'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -201,44 +254,34 @@ class Api {
           'orderId': data['orderId'] ?? data['id'],
           'data': data,
         };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to create order',
+        };
       }
-
-      return {
-        'success': false,
-        'message': data['message'] ?? 'Failed to create order',
-      };
     } catch (e) {
       print('Order creation error: $e');
       return {'success': false, 'message': e.toString()};
     }
   }
 
-
   // ======================
   // SESSION MANAGEMENT
   // ======================
-  static Future<void> saveSession(
-      String token, Map<String, dynamic> user) async {
-
+  static Future<void> saveSession(String token, Map<String, dynamic> user) async {
     final prefs = await SharedPreferences.getInstance();
-
     await prefs.setString('token', token);
     await prefs.setString('user', jsonEncode(user));
   }
 
-
   static Future<String?> getToken() async {
-
     final prefs = await SharedPreferences.getInstance();
-
     return prefs.getString('token');
   }
 
-
   static Future<void> logout() async {
-
     final prefs = await SharedPreferences.getInstance();
-
     await prefs.clear();
   }
 }
