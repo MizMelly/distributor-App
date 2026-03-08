@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io'; 
+import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import '../../theme/app_colors.dart';
@@ -92,7 +92,6 @@ class _TransferPaymentModalState extends State<TransferPaymentModal> {
 
       if (pickedFile != null) {
         setState(() => selectedImage = File(pickedFile.path));
-        // Auto-upload after selection
         await _uploadImage();
       }
     } catch (e) {
@@ -113,7 +112,8 @@ class _TransferPaymentModalState extends State<TransferPaymentModal> {
       final fileBytes = await selectedImage!.readAsBytes();
       final fileName = 'payment_proof_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-      // Create multipart request to cPanel
+      print('Uploading image: $fileName, size: ${fileBytes.length} bytes');
+
       final request = http.MultipartRequest(
         'POST',
         Uri.parse('https://saintodumo.com/appimages/upload.php'),
@@ -121,7 +121,7 @@ class _TransferPaymentModalState extends State<TransferPaymentModal> {
 
       request.files.add(
         http.MultipartFile.fromBytes(
-          'file', // Field name expected by upload.php
+          'file',
           fileBytes,
           filename: fileName,
         ),
@@ -129,15 +129,15 @@ class _TransferPaymentModalState extends State<TransferPaymentModal> {
 
       final response = await request.send();
       final responseBody = await response.stream.bytesToString();
-      
-      debugPrint('Upload response: $responseBody');
+
+      print('Upload status: ${response.statusCode}');
+      print('Upload response body: $responseBody');
 
       if (response.statusCode == 200) {
-        // Parse the response - expecting JSON with imageUrl or url field
         try {
           final data = jsonDecode(responseBody);
-          final imageUrl = data['imageUrl'] ?? data['url'] ?? data['message'];
-          
+          final imageUrl = data['imageUrl'] ?? data['url'] ?? data['message'] ?? responseBody.trim();
+
           setState(() {
             uploadedImageUrl = imageUrl;
           });
@@ -151,7 +151,6 @@ class _TransferPaymentModalState extends State<TransferPaymentModal> {
             );
           }
         } catch (e) {
-          // If response is already the URL string
           setState(() {
             uploadedImageUrl = responseBody.trim();
           });
@@ -166,10 +165,10 @@ class _TransferPaymentModalState extends State<TransferPaymentModal> {
           }
         }
       } else {
-        throw Exception('Upload failed with status ${response.statusCode}');
+        throw Exception('Upload failed with status ${response.statusCode} - $responseBody');
       }
     } catch (e) {
-      debugPrint('Upload error: $e');
+      print('Upload error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -211,6 +210,8 @@ class _TransferPaymentModalState extends State<TransferPaymentModal> {
         'payment_proof': uploadedImageUrl,
         'notes': _notesController.text.trim(),
       };
+
+      print('Submitting transfer: $transferDetails');
 
       widget.onSubmit(transferDetails);
       Navigator.of(context).pop();
@@ -618,6 +619,15 @@ class _TransferPaymentModalState extends State<TransferPaymentModal> {
                                   ),
                                 ),
                               ],
+                              if (uploadedImageUrl != null) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Uploaded URL: $uploadedImageUrl',
+                                  style: const TextStyle(fontSize: 12, color: Colors.green),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -679,4 +689,3 @@ class _TransferPaymentModalState extends State<TransferPaymentModal> {
     );
   }
 }
-
