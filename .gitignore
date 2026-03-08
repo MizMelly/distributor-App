@@ -14,6 +14,10 @@
 .swiftpm/
 migrate_working_dir/
 .env
+.env.local
+.env.development
+.env.test
+.env.production
 
 # ==============================
 # IntelliJ / Android Studio
@@ -43,6 +47,19 @@ coverage/
 *.g.dart
 *.freezed.dart
 *.mocks.dart
+
+# ==============================
+# Platform-specific / local config files
+# (these often contain Platform or dart:io checks)
+# ==============================
+lib/config/local_config.dart
+lib/config/platform_config.dart
+lib/utils/platform_utils.dart
+lib/services/platform_service.dart
+*platform*.dart
+*Platform*.dart
+lib/main_desktop.dart
+lib/main_web.dart
 
 # ==============================
 # Build Directory
@@ -83,3 +100,17 @@ ios/Runner/GeneratedPluginRegistrant.*
 # ==============================
 web/build/
 web/flutter_service_worker.js
+web/index.html.bak  # local backups of index.html
+
+# ==============================
+# macOS / Desktop
+# ==============================
+macos/Flutter/ephemeral/
+macos/Runner/GeneratedPluginRegistrant.*
+
+# ==============================
+# Temporary / test files
+# ==============================
+*.tmp
+*.bak
+test/*.log
