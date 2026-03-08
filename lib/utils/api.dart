@@ -3,23 +3,25 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Api {
+  // ======================
+  // BASE URL (Vercel backend)
+  // ======================
+  static const String baseUrl = 'https://distrohub-app-backend.vercel.app';
 
   // ======================
-  // BASE URL
-  // ======================
-  static const String baseUrl =
-      'https://distrohub-app-backend.vercel.app/api';
-
-
-  // ======================
-  // LOGIN
+  // AUTH
   // ======================
   static Future<Map<String, dynamic>?> login({
     required String email,
     required String password,
   }) async {
     try {
-      final url = Uri.parse('$baseUrl/auth/login');
+      final url = Uri.parse('$baseUrl/api/auth/login');
+      print('=== LOGIN REQUEST START ===');
+      print('URL: $url');
+      print('Method: POST');
+      print('Headers: ${{'Content-Type': 'application/json'}}');
+      print('Body sent: ${jsonEncode({'email': email, 'password': '***'})}');
 
       final response = await http.post(
         url,
@@ -30,28 +32,28 @@ class Api {
         }),
       );
 
-      print("LOGIN STATUS: ${response.statusCode}");
-      print("LOGIN BODY: ${response.body}");
+      print('=== LOGIN RESPONSE ===');
+      print('Status code: ${response.statusCode}');
+      print('Headers: ${response.headers}');
+      print('Body: ${response.body}');
 
-      if (response.statusCode >= 200 && response.statusCode < 300) {
+      if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-
-        if (data['success'] == true) {
-          await saveSession(data['token'], data['user'] ?? {});
-          return data;
-        }
-
-        print("Login failed: ${data['message']}");
+        print('Parsed success data: $data');
+        await saveSession(data['token'], data['user'] ?? {});
+        return data;
+      } else {
+        print('Login failed - non-200 status');
         return null;
       }
-
-      return null;
-    } catch (e) {
-      print("Login exception: $e");
+    } catch (e, stack) {
+      print('=== LOGIN NETWORK EXCEPTION ===');
+      print('Error type: ${e.runtimeType}');
+      print('Error message: $e');
+      print('Stack trace: $stack');
       return null;
     }
   }
-
 
   // ======================
   // PROFILE
