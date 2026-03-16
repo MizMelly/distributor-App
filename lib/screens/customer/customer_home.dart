@@ -437,7 +437,7 @@ class _DashboardHomeState extends State<_DashboardHome> {
                   status,
                 ),
               );
-            }).toList(),
+            }),
         ],
       ),
     );
